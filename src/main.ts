@@ -21,31 +21,62 @@ app.appendChild(clearButton);
 
 // canvas context
 const ctx = canvas.getContext("2d");
+let drawing: Array<Array<{x: number; y: number}>> = [];
+let currentPath: Array<{x: number; y: number}> = [];
 let isDrawing = false;
 
-// event listnerns for drawing
+// flag drawing changed
+function drawingChanged() {
+    const event = new CustomEvent("drawingChanged");
+    canvas.dispatchEvent(event);
+}
+
+// draw the current drawing
+canvas.addEventListener("drawingChanged", () => {
+    ctx?.beginPath();
+    for (let i = 0; i < currentPath.length; i++) {
+        const point = currentPath[i];
+        if (i === 0) {
+            ctx?.moveTo(point.x, point.y);
+        } else {
+            ctx?.lineTo(point.x, point.y);
+        }
+    } 
+    ctx?.stroke();
+});
+
+// event listeners for drawing
 canvas.addEventListener("mousedown", (e) => {
-  isDrawing = true;
-  ctx?.beginPath();
-  ctx?.moveTo(e.offsetX, e.offsetY);
+    isDrawing = true;
+    currentPath = [];
+    currentPath.push({x: e.offsetX, y: e.offsetY});
 });
 
 canvas.addEventListener("mousemove", (e) => {
-  if (isDrawing) {
-    ctx?.lineTo(e.offsetX, e.offsetY);
-    ctx?.stroke();
-  }
+    if (isDrawing) {
+        currentPath.push({x: e.offsetX, y: e.offsetY});
+        drawingChanged();
+    }
 });
 
 canvas.addEventListener("mouseup", () => {
-  isDrawing = false;
+    if (isDrawing){
+        drawing.push(currentPath);
+        currentPath = [];
+        isDrawing = false;
+    }  
 });
 
 canvas.addEventListener("mouseout", () => {
-  isDrawing = false;
+    if (isDrawing){
+        drawing.push(currentPath);
+        currentPath = [];
+        isDrawing = false;
+    }
 });
 
 // Clear button
 clearButton.addEventListener("click", () => {
-  ctx?.clearRect(0, 0, canvas.width, canvas.height);
+    ctx?.clearRect(0, 0, canvas.width, canvas.height);
+    drawing = [];
 });
