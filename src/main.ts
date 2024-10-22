@@ -19,10 +19,21 @@ const clearButton = document.createElement("button");
 clearButton.textContent = "Clear Canvas";
 app.appendChild(clearButton);
 
+// add an undo button
+const undoButton = document.createElement("button");
+undoButton.textContent = "Undo";
+app.appendChild(undoButton);
+
+// add a redo button
+const redoButton = document.createElement("button");
+redoButton.textContent = "Redo";
+app.appendChild(redoButton);
+
 // canvas context
 const ctx = canvas.getContext("2d");
 let drawing: Array<Array<{x: number; y: number}>> = [];
 let currentPath: Array<{x: number; y: number}> = [];
+let redoStack: Array<Array<{x: number; y: number}>> = [];
 let isDrawing = false;
 
 // flag drawing changed
@@ -33,16 +44,15 @@ function drawingChanged() {
 
 // draw the current drawing
 canvas.addEventListener("drawingChanged", () => {
-    ctx?.beginPath();
-    for (let i = 0; i < currentPath.length; i++) {
-        const point = currentPath[i];
-        if (i === 0) {
-            ctx?.moveTo(point.x, point.y);
-        } else {
-            ctx?.lineTo(point.x, point.y);
-        }
-    } 
-    ctx?.stroke();
+    ctx?.clearRect(0, 0, canvas.width, canvas.height);
+    drawing.forEach(path => {
+        ctx?.beginPath();
+        path.forEach((point, index) => {
+            if (index === 0) ctx?.moveTo(point.x, point.y);
+            else ctx?.lineTo(point.x, point.y);
+        });
+        ctx?.stroke();
+    });
 });
 
 // event listeners for drawing
@@ -55,7 +65,6 @@ canvas.addEventListener("mousedown", (e) => {
 canvas.addEventListener("mousemove", (e) => {
     if (isDrawing) {
         currentPath.push({x: e.offsetX, y: e.offsetY});
-        drawingChanged();
     }
 });
 
@@ -64,6 +73,8 @@ canvas.addEventListener("mouseup", () => {
         drawing.push(currentPath);
         currentPath = [];
         isDrawing = false;
+        redoStack = [];
+        drawingChanged();
     }  
 });
 
@@ -72,6 +83,8 @@ canvas.addEventListener("mouseout", () => {
         drawing.push(currentPath);
         currentPath = [];
         isDrawing = false;
+        redoStack = [];
+        drawingChanged();
     }
 });
 
@@ -79,4 +92,21 @@ canvas.addEventListener("mouseout", () => {
 clearButton.addEventListener("click", () => {
     ctx?.clearRect(0, 0, canvas.width, canvas.height);
     drawing = [];
+    redoStack = [];
+});
+
+// undo button
+undoButton.addEventListener("click", () => {
+    if (drawing.length > 0) {
+        redoStack.push(drawing.pop()!);
+        drawingChanged();
+    }
+});
+
+// redo button
+redoButton.addEventListener("click", () => {
+    if (redoStack.length > 0) {
+        drawing.push(redoStack.pop()!);
+        drawingChanged();
+    }
 });
