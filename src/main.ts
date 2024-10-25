@@ -46,6 +46,7 @@ let currentPath: MarkerLine | null = null;
 let redoStack: Array<MarkerLine> = [];
 let isDrawing = false;
 let currentThickness = 2;
+let toolPreview: ToolPreview | null = null;
 
 
 // Marker Class
@@ -76,6 +77,29 @@ class MarkerLine{
     }
 }
 
+// Tool Preview Class
+class ToolPreview {
+    private x: number;
+    private y: number;
+    private thickness: number;
+
+    constructor(x: number, y: number, thickness: number){
+        this.x = x;
+        this.y = y;
+        this.thickness = thickness;
+    }
+    updatePosition(x: number, y: number){
+        this.x = x;
+        this.y = y;
+    }
+
+    draw(ctx: CanvasRenderingContext2D){
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.thickness / 2, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+}
+
 // flag drawing changed
 function drawingChanged() {
     const event = new CustomEvent("drawingChanged");
@@ -86,6 +110,9 @@ function drawingChanged() {
 canvas.addEventListener("drawingChanged", () => {
     ctx?.clearRect(0, 0, canvas.width, canvas.height);
     drawing.forEach((path) => path.display(ctx!));
+    if (!isDrawing && toolPreview) {
+        toolPreview.draw(ctx!); // Only draw preview when not drawing
+    }
 });
 
 // event listeners for drawing
@@ -97,6 +124,15 @@ canvas.addEventListener("mousedown", (e) => {
 canvas.addEventListener("mousemove", (e) => {
     if (isDrawing && currentPath){
         currentPath.drag(e.offsetX, e.offsetY);
+        drawingChanged();
+    } else{
+        if (!toolPreview) {
+            toolPreview = new ToolPreview(e.offsetX, e.offsetY, currentThickness);
+        } else {
+            toolPreview.updatePosition(e.offsetX, e.offsetY);
+        }
+        const event = new CustomEvent("tool-moved");
+        canvas.dispatchEvent(event);
         drawingChanged();
     }
 });
