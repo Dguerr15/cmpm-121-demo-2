@@ -102,47 +102,58 @@ const title = document.createElement("h1");
 title.textContent = APP_NAME;
 app.appendChild(title);
 
+// Helper function to create buttons
+function createButton(text: string, onClick: () => void): HTMLButtonElement {
+    const button = document.createElement("button");
+    button.textContent = text;
+    button.addEventListener("click", onClick);
+    app.appendChild(button);
+    return button;
+}
+
 // Add Canvas
 const canvas = document.createElement("canvas");
 canvas.width = 256;
 canvas.height = 256;
 app.appendChild(canvas);
 
-// Add Thin and Thick Marker Buttons
-const thinButton = document.createElement("button");
-thinButton.textContent = "Thin Marker";
-app.appendChild(thinButton);
+// Button Creation
+const thinButton = createButton("Thin Marker", () => {
+    currentThickness = 2;
+    updateToolSelection();
+});
 
-const thickButton = document.createElement("button");
-thickButton.textContent = "Thick Marker";
-app.appendChild(thickButton);
+const thickButton = createButton("Thick Marker", () => {
+    currentThickness = 6;
+    updateToolSelection();
+});
 
-// Add a Clear Canvas Button
-const clearButton = document.createElement("button");
-clearButton.textContent = "Clear Canvas";
-app.appendChild(clearButton);
+const _clearButton = createButton("Clear Canvas", () => {
+    clearCanvas();
+});
 
-// Add an Undo Button
-const undoButton = document.createElement("button");
-undoButton.textContent = "Undo";
-app.appendChild(undoButton);
+const _undoButton = createButton("Undo", () => {
+    if (drawing.length > 0) {
+        redoStack.push(drawing.pop()!);
+        drawingChanged();
+    }
+});
 
-// Add a Redo Button
-const redoButton = document.createElement("button");
-redoButton.textContent = "Redo";
-app.appendChild(redoButton);
+const _redoButton = createButton("Redo", () => {
+    if (redoStack.length > 0) {
+        drawing.push(redoStack.pop()!);
+        drawingChanged();
+    }
+});
 
 // Sticker Button Setup
 const stickerButtons = ['🐶', '🌟', '🍕'];
 stickerButtons.forEach(sticker => {
-    const button = document.createElement('button');
-    button.textContent = sticker;
-    button.addEventListener('click', () => {
+    createButton(sticker, () => {
         currentTool = new StickerCommand(sticker);
         fireToolMoved();
         toolPreview = null;
     });
-    app.appendChild(button);
 });
 
 // Canvas context
@@ -162,6 +173,13 @@ function fireToolMoved() {
     canvas.dispatchEvent(event);
 }
 
+// Clear canvas function
+function clearCanvas() {
+    ctx?.clearRect(0, 0, canvas.width, canvas.height);
+    drawing = [];
+    redoStack = [];
+}
+
 // Flag drawing changed
 function drawingChanged() {
     const event = new CustomEvent("drawingChanged");
@@ -169,7 +187,7 @@ function drawingChanged() {
 }
 
 // Draw the current drawing
-canvas.addEventListener("drawingChanged", () => {
+function drawCanvas() {
     ctx?.clearRect(0, 0, canvas.width, canvas.height);
     drawing.forEach((item) => item.display(ctx!));
     if (isDrawing && currentPath) {
@@ -179,21 +197,13 @@ canvas.addEventListener("drawingChanged", () => {
     } else if (currentTool instanceof StickerCommand) {
         currentTool.drawPreview(ctx!);
     }
-});
+}
 
 // Updated tool preview on tool-moved
-canvas.addEventListener("tool-moved", () => {
-    ctx?.clearRect(0, 0, canvas.width, canvas.height);
-    drawing.forEach((path) => path.display(ctx!));
+canvas.addEventListener("tool-moved", drawCanvas);
 
-    if (toolPreview && !(currentTool instanceof StickerCommand)) {
-        toolPreview.draw(ctx!);
-    }
-
-    if (currentTool instanceof StickerCommand) {
-        currentTool.drawPreview(ctx!);
-    }
-});
+// Drawing changed listener
+canvas.addEventListener("drawingChanged", drawCanvas);
 
 // Event listeners for drawing
 canvas.addEventListener("mousedown", (e) => {
@@ -245,47 +255,14 @@ canvas.addEventListener("mouseout", () => {
     }
 });
 
-// Clear button
-clearButton.addEventListener("click", () => {
-    ctx?.clearRect(0, 0, canvas.width, canvas.height);
-    drawing = [];
-    redoStack = [];
-});
-
-// Undo button
-undoButton.addEventListener("click", () => {
-    if (drawing.length > 0) {
-        redoStack.push(drawing.pop()!);
-        drawingChanged();
-    }
-});
-
-// Redo button
-redoButton.addEventListener("click", () => {
-    if (redoStack.length > 0) {
-        drawing.push(redoStack.pop()!);
-        drawingChanged();
-    }
-});
-
-// Thin button
-thinButton.addEventListener("click", () => {
-    currentThickness = 2;
-    thinButton.classList.add("selectedTool");
-    thickButton.classList.remove("selectedTool");
-
+// Function to update tool selection visuals
+function updateToolSelection() {
+    thinButton.classList.toggle("selectedTool", currentThickness === 2);
+    thickButton.classList.toggle("selectedTool", currentThickness === 6);
     currentTool = null;
     toolPreview = new ToolPreview(0, 0, currentThickness);
     fireToolMoved();
-});
+}
 
-// Thick button
-thickButton.addEventListener("click", () => {
-    currentThickness = 6;
-    thickButton.classList.add("selectedTool");
-    thinButton.classList.remove("selectedTool");
-
-    currentTool = null;
-    toolPreview = new ToolPreview(0, 0, currentThickness);
-    fireToolMoved();
-});
+// Initial setup
+updateToolSelection();
