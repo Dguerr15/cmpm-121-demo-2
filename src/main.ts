@@ -31,9 +31,35 @@ app.appendChild(redoButton);
 
 // canvas context
 const ctx = canvas.getContext("2d");
-let drawing: Array<Array<{x: number; y: number}>> = [];
-let currentPath: Array<{x: number; y: number}> = [];
-let redoStack: Array<Array<{x: number; y: number}>> = [];
+
+// Marker Class
+class MarkerLine{
+    private points: Array<{x: number; y: number}> = [];
+
+    constructor(startX: number, startY: number){
+        this.points.push({x: startX, y: startY});
+    }
+
+    // add points while dragging
+    drag(x: number, y: number){
+        this.points.push({x, y});
+    }
+
+    // display line
+    display(ctx: CanvasRenderingContext2D){
+        if (this.points.length < 2) return;
+        ctx.beginPath();
+        this.points.forEach((point, index) => {
+            if (index === 0) ctx.moveTo(point.x, point.y);
+            else ctx.lineTo(point.x, point.y);
+        });
+        ctx.stroke();
+    }
+}
+
+let drawing: Array<MarkerLine> = [];
+let currentPath: MarkerLine | null = null;
+let redoStack: Array<MarkerLine> = [];
 let isDrawing = false;
 
 // flag drawing changed
@@ -45,33 +71,26 @@ function drawingChanged() {
 // draw the current drawing
 canvas.addEventListener("drawingChanged", () => {
     ctx?.clearRect(0, 0, canvas.width, canvas.height);
-    drawing.forEach(path => {
-        ctx?.beginPath();
-        path.forEach((point, index) => {
-            if (index === 0) ctx?.moveTo(point.x, point.y);
-            else ctx?.lineTo(point.x, point.y);
-        });
-        ctx?.stroke();
-    });
+    drawing.forEach((path) => path.display(ctx!));
 });
 
 // event listeners for drawing
 canvas.addEventListener("mousedown", (e) => {
     isDrawing = true;
-    currentPath = [];
-    currentPath.push({x: e.offsetX, y: e.offsetY});
+    currentPath = new MarkerLine(e.offsetX, e.offsetY);
 });
 
 canvas.addEventListener("mousemove", (e) => {
-    if (isDrawing) {
-        currentPath.push({x: e.offsetX, y: e.offsetY});
+    if (isDrawing && currentPath){
+        currentPath.drag(e.offsetX, e.offsetY);
+        drawingChanged();
     }
 });
 
 canvas.addEventListener("mouseup", () => {
-    if (isDrawing){
+    if (isDrawing && currentPath){
         drawing.push(currentPath);
-        currentPath = [];
+        currentPath = null;
         isDrawing = false;
         redoStack = [];
         drawingChanged();
@@ -79,12 +98,11 @@ canvas.addEventListener("mouseup", () => {
 });
 
 canvas.addEventListener("mouseout", () => {
-    if (isDrawing){
+    if (isDrawing && currentPath){
         drawing.push(currentPath);
-        currentPath = [];
+        currentPath = null;
         isDrawing = false;
         redoStack = [];
-        drawingChanged();
     }
 });
 
