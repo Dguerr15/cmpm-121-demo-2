@@ -115,6 +115,10 @@ function createButton(text: string, onClick: () => void): HTMLButtonElement {
 const canvas = document.createElement("canvas");
 canvas.width = 256;
 canvas.height = 256;
+// center the canvas above buttons
+canvas.style.margin = "0 auto";
+canvas.style.display = "block";
+
 app.appendChild(canvas);
 
 // Button Creation
