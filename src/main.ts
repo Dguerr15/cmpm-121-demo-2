@@ -112,7 +112,6 @@ app.appendChild(title);
 const canvas = document.createElement("canvas");
 canvas.width = 256;
 canvas.height = 256;
-
 canvas.style.margin = "0 auto";
 canvas.style.display = "block";
 
@@ -221,13 +220,10 @@ createButton("Export", () => {
     exportCanvas.width = 1024;
     exportCanvas.height = 1024;
     const exportCtx = exportCanvas.getContext("2d")!;
-
     // scale 
     exportCtx.scale(4, 4);
-
     // redraw everything on new canvas
     drawing.forEach((item) => item.display(exportCtx));
-
     // convert to url to download
     exportCanvas.toBlob((blob) => {
         if (blob) {
@@ -239,9 +235,6 @@ createButton("Export", () => {
             URL.revokeObjectURL(url);
         }
     }, "image/png");
-
-
-
 }, middleToolbar);
 
 // Canvas context
@@ -269,7 +262,7 @@ function clearCanvas() {
     redoStack = [];
 }
 
-// Flag drawing changed
+// flag for drawing changed
 function drawingChanged() {
     const event = new CustomEvent("drawingChanged");
     canvas.dispatchEvent(event);
