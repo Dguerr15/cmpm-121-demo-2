@@ -102,15 +102,6 @@ const title = document.createElement("h1");
 title.textContent = APP_NAME;
 app.appendChild(title);
 
-// Helper function to create buttons
-function createButton(text: string, onClick: () => void): HTMLButtonElement {
-    const button = document.createElement("button");
-    button.textContent = text;
-    button.addEventListener("click", onClick);
-    app.appendChild(button);
-    return button;
-}
-
 // Add Canvas
 const canvas = document.createElement("canvas");
 canvas.width = 256;
@@ -121,57 +112,100 @@ canvas.style.display = "block";
 
 app.appendChild(canvas);
 
+// layout helper
+const layout = document.createElement("div");
+layout.className = "layout";
+app.appendChild(layout);
+
+// left toolbar for thin/thick buttons
+const leftToolbar = document.createElement("div");
+leftToolbar.className = "toolbar-left";
+layout.appendChild(leftToolbar);
+
+// under canvas clear, undo, redo
+const middleToolbar = document.createElement("div");
+middleToolbar.className = "toolbar-middle";
+layout.appendChild(middleToolbar);
+
+// right toolbar for stickers
+const rightToolbar = document.createElement("div");
+rightToolbar.className = "toolbar-right";
+layout.appendChild(rightToolbar);
+const rightToolbarGrid = document.createElement("div");
+rightToolbarGrid.className = "toolbar-right-grid";
+rightToolbar.appendChild(rightToolbarGrid);
+
+// Column for initial stickers
+const initialStickersColumn = document.createElement("div");
+initialStickersColumn.className = "sticker-column";
+rightToolbarGrid.appendChild(initialStickersColumn);
+
+// Column for custom stickers
+const customStickersColumn = document.createElement("div");
+customStickersColumn.className = "sticker-column";
+rightToolbarGrid.appendChild(customStickersColumn);
+
+
+// Helper function to create buttons
+function createButton(text: string, onClick: () => void, container: HTMLElement): HTMLButtonElement {
+    const button = document.createElement("button");
+    button.textContent = text;
+    button.addEventListener("click", onClick);
+    container.appendChild(button);
+    return button;
+}
+
 // Button Creation
 const thinButton = createButton("Thin Marker", () => {
     currentThickness = 2;
     updateToolSelection();
-});
+}, leftToolbar);
 
 const thickButton = createButton("Thick Marker", () => {
     currentThickness = 6;
     updateToolSelection();
-});
+}, leftToolbar);
 
 const _clearButton = createButton("Clear Canvas", () => {
     clearCanvas();
-});
+},middleToolbar);
 
 const _undoButton = createButton("Undo", () => {
     if (drawing.length > 0) {
         redoStack.push(drawing.pop()!);
         drawingChanged();
     }
-});
+}, middleToolbar);
 
 const _redoButton = createButton("Redo", () => {
     if (redoStack.length > 0) {
         drawing.push(redoStack.pop()!);
         drawingChanged();
     }
-});
+}, middleToolbar);
 
 // Sticker Button Setup
-const stickerButtons = ['🐶', '🌟', '🍕'];
+const stickerButtons = ['😈', '💋', '🍆'];
 stickerButtons.forEach(sticker => {
     createButton(sticker, () => {
         currentTool = new StickerCommand(sticker);
         fireToolMoved();
         toolPreview = null;
-    });
+    }, initialStickersColumn);
 });
 
 // Custom Sticker Button
 createButton("Custom Sticker", () => { 
-    const sticker = prompt("Enter a custom sticker", "👁️");
+    const sticker = prompt("Enter a custom sticker", "😜");
     if (sticker) {
         stickerButtons.push(sticker);
         createButton(sticker, () => {   
             currentTool = new StickerCommand(sticker);
             fireToolMoved();
             toolPreview = null;
-        });
+        }, customStickersColumn);
     }
-});
+}, rightToolbar);
 
 // export button
 createButton("Export", () => {
@@ -200,7 +234,7 @@ createButton("Export", () => {
 
 
 
-});
+}, middleToolbar);
 
 // Canvas context
 const ctx = canvas.getContext("2d");
