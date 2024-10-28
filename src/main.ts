@@ -12,10 +12,12 @@ interface Drawable {
 class MarkerLine implements Drawable {
     private points: Array<{ x: number; y: number }> = [];
     thickness: number;
+    color: string;
 
     constructor(startX: number, startY: number, thickness: number) {
         this.points.push({ x: startX, y: startY });
         this.thickness = thickness;
+        this.color = currentColor;
     }
 
     // add points while dragging
@@ -28,6 +30,7 @@ class MarkerLine implements Drawable {
         if (this.points.length < 2) return;
         ctx.beginPath();
         ctx.lineWidth = this.thickness;
+        ctx.strokeStyle = this.color;
         this.points.forEach((point, index) => {
             if (index === 0) ctx.moveTo(point.x, point.y);
             else ctx.lineTo(point.x, point.y);
@@ -41,11 +44,13 @@ class ToolPreview {
     private x: number;
     private y: number;
     private thickness: number;
+    private color: string;
 
-    constructor(x: number, y: number, thickness: number) {
+    constructor(x: number, y: number, thickness: number, color: string) {
         this.x = x;
         this.y = y;
         this.thickness = thickness;
+        this.color = color;
     }
     updatePosition(x: number, y: number) {
         this.x = x;
@@ -54,6 +59,8 @@ class ToolPreview {
 
     draw(ctx: CanvasRenderingContext2D) {
         ctx.beginPath();
+        ctx.lineWidth = this.thickness;
+        ctx.strokeStyle = this.color; 
         ctx.arc(this.x, this.y, this.thickness / 2, 0, Math.PI * 2);
         ctx.stroke();
     }
@@ -64,16 +71,11 @@ class StickerCommand implements Drawable {
     private sticker: string;
     private x: number | null = null;
     private y: number | null = null;
+    private rotation: number;
 
     constructor(sticker: string) {
         this.sticker = sticker;
-    }
-
-    drawPreview(ctx: CanvasRenderingContext2D) {
-        if (this.x !== null && this.y !== null) {
-            ctx.font = '30px Arial';
-            ctx.fillText(this.sticker, this.x, this.y);
-        }
+        this.rotation = getRandomRotation();
     }
 
     move(x: number, y: number) {
@@ -91,8 +93,12 @@ class StickerCommand implements Drawable {
 
     display(ctx: CanvasRenderingContext2D) {
         if (this.x !== null && this.y !== null) {
+            ctx.save();
+            ctx.translate(this.x, this.y); 
+            ctx.rotate((this.rotation * Math.PI) / 180); 
             ctx.font = "30px Arial";
-            ctx.fillText(this.sticker, this.x, this.y);
+            ctx.fillText(this.sticker, 0, 0);
+            ctx.restore();
         }
     }
 }
@@ -158,11 +164,13 @@ function createButton(text: string, onClick: () => void, container: HTMLElement)
 // Button Creation
 const thinButton = createButton("Thin Marker", () => {
     currentThickness = 2;
+    currentColor = getRandomColor();
     updateToolSelection();
 }, leftToolbar);
 
 const thickButton = createButton("Thick Marker", () => {
     currentThickness = 6;
+    currentColor = getRandomColor();
     updateToolSelection();
 }, leftToolbar);
 
@@ -246,6 +254,7 @@ let isDrawing = false;
 let currentThickness = 2;
 let toolPreview: ToolPreview | null = null;
 let currentTool: Drawable | null = null;
+let currentColor: string = getRandomColor();
 
 // Tool-moved event dispatcher
 function fireToolMoved() {
@@ -275,8 +284,22 @@ function drawCanvas() {
     } else if (toolPreview && !(currentTool instanceof StickerCommand)) {
         toolPreview.draw(ctx!);
     } else if (currentTool instanceof StickerCommand) {
-        currentTool.drawPreview(ctx!);
+        currentTool.display(ctx!);
     }
+}
+
+// get a color
+function getRandomColor(): string {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+}
+
+function getRandomRotation(): number {
+    return Math.floor(Math.random() * 360);
 }
 
 // Updated tool preview on tool-moved
@@ -292,6 +315,7 @@ canvas.addEventListener("mousedown", (e) => {
     } else {
         isDrawing = true;
         currentPath = new MarkerLine(e.offsetX, e.offsetY, currentThickness);
+        currentPath.color = currentColor;
     }
 });
 
@@ -304,7 +328,7 @@ canvas.addEventListener("mousemove", (e) => {
         drawingChanged();
     } else {
         if (!toolPreview) {
-            toolPreview = new ToolPreview(e.offsetX, e.offsetY, currentThickness);
+            toolPreview = new ToolPreview(e.offsetX, e.offsetY, currentThickness, currentColor);
         } else {
             toolPreview.updatePosition(e.offsetX, e.offsetY);
         }
@@ -340,7 +364,7 @@ function updateToolSelection() {
     thinButton.classList.toggle("selectedTool", currentThickness === 2);
     thickButton.classList.toggle("selectedTool", currentThickness === 6);
     currentTool = null;
-    toolPreview = new ToolPreview(0, 0, currentThickness);
+    toolPreview = new ToolPreview(0, 0, currentThickness, currentColor);
     fireToolMoved();
 }
 
