@@ -160,6 +160,7 @@ stickerButtons.forEach(sticker => {
     });
 });
 
+// Custom Sticker Button
 createButton("Custom Sticker", () => { 
     const sticker = prompt("Enter a custom sticker", "👁️");
     if (sticker) {
@@ -170,6 +171,35 @@ createButton("Custom Sticker", () => {
             toolPreview = null;
         });
     }
+});
+
+// export button
+createButton("Export", () => {
+    const exportCanvas = document.createElement("canvas");
+    exportCanvas.width = 1024;
+    exportCanvas.height = 1024;
+    const exportCtx = exportCanvas.getContext("2d")!;
+
+    // scale 
+    exportCtx.scale(4, 4);
+
+    // redraw everything on new canvas
+    drawing.forEach((item) => item.display(exportCtx));
+
+    // convert to url to download
+    exportCanvas.toBlob((blob) => {
+        if (blob) {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "sketch.png";
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+    }, "image/png");
+
+
+
 });
 
 // Canvas context
