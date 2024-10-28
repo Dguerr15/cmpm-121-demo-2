@@ -115,7 +115,7 @@ function createButton(text: string, onClick: () => void): HTMLButtonElement {
 const canvas = document.createElement("canvas");
 canvas.width = 256;
 canvas.height = 256;
-// center the canvas above buttons
+
 canvas.style.margin = "0 auto";
 canvas.style.display = "block";
 
@@ -158,6 +158,18 @@ stickerButtons.forEach(sticker => {
         fireToolMoved();
         toolPreview = null;
     });
+});
+
+createButton("Custom Sticker", () => { 
+    const sticker = prompt("Enter a custom sticker", "👁️");
+    if (sticker) {
+        stickerButtons.push(sticker);
+        createButton(sticker, () => {   
+            currentTool = new StickerCommand(sticker);
+            fireToolMoved();
+            toolPreview = null;
+        });
+    }
 });
 
 // Canvas context
