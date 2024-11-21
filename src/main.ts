@@ -103,39 +103,58 @@ class StickerCommand implements Drawable {
     }
 }
 
+// Add containers to style the app
+app.style.display = "flex";
+app.style.flexDirection = "column";
+app.style.alignItems = "center";
+
+// App divided into title banner and main content
+const titleBanner = document.createElement("div");
+titleBanner.style.width = "100%";
+titleBanner.style.textAlign = "center";
+app.appendChild(titleBanner);
+
 // Add Title
 const title = document.createElement("h1");
 title.textContent = APP_NAME;
-app.appendChild(title);
+titleBanner.appendChild(title);
 
-// Add Canvas
-const canvas = document.createElement("canvas");
-canvas.width = 256;
-canvas.height = 256;
-canvas.style.margin = "0 auto";
-canvas.style.display = "block";
-
-app.appendChild(canvas);
-
-// layout helper
-const layout = document.createElement("div");
-layout.className = "layout";
-app.appendChild(layout);
+// Main panel divided left and right
+const mainPanel = document.createElement("div");
+mainPanel.style.width = "100%";
+mainPanel.style.display = "flex";
+mainPanel.style.flexDirection = "row";
+app.appendChild(mainPanel);
 
 // left toolbar for thin/thick buttons
 const leftToolbar = document.createElement("div");
 leftToolbar.className = "toolbar-left";
-layout.appendChild(leftToolbar);
+leftToolbar.style.width = "200px";
+leftToolbar.style.display = "flex";
+leftToolbar.style.flexDirection = "column";
+leftToolbar.style.justifyContent = "flex-start";
+mainPanel.appendChild(leftToolbar);
 
 // under canvas clear, undo, redo
 const middleToolbar = document.createElement("div");
 middleToolbar.className = "toolbar-middle";
-layout.appendChild(middleToolbar);
+middleToolbar.style.flexDirection = "column";
+middleToolbar.style.flexGrow = "1";
+mainPanel.appendChild(middleToolbar);
+
+// Add Canvas
+const canvas = document.createElement("canvas");
+canvas.width = window.innerWidth * 0.3;
+canvas.height = window.innerWidth * 0.3;
+canvas.style.margin = "0 auto";
+canvas.style.display = "block";
+middleToolbar.appendChild(canvas);
 
 // right toolbar for stickers
 const rightToolbar = document.createElement("div");
 rightToolbar.className = "toolbar-right";
-layout.appendChild(rightToolbar);
+rightToolbar.style.width = "200px";
+mainPanel.appendChild(rightToolbar);
 const rightToolbarGrid = document.createElement("div");
 rightToolbarGrid.className = "toolbar-right-grid";
 rightToolbar.appendChild(rightToolbarGrid);
@@ -149,7 +168,6 @@ rightToolbarGrid.appendChild(initialStickersColumn);
 const customStickersColumn = document.createElement("div");
 customStickersColumn.className = "sticker-column";
 rightToolbarGrid.appendChild(customStickersColumn);
-
 
 // Helper function to create buttons
 function createButton(text: string, onClick: () => void, container: HTMLElement): HTMLButtonElement {
