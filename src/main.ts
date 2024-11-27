@@ -95,6 +95,7 @@ class StickerCommand implements Drawable {
     if (this.x !== null && this.y !== null) {
       ctx.save();
       ctx.translate(this.x, this.y);
+      ctx.rotate((this.rotation * Math.PI) / 180); 
       ctx.font = "30px Arial";
       ctx.fillText(this.sticker, 0, 0);
       ctx.restore();
